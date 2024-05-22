@@ -1,4 +1,5 @@
 import pygame
+
 WIDTH, HEIGHT = 800, 600
 PLAYER_WIDTH, PLAYER_HEIGHT = 10, 20
 FPS = 60
@@ -7,59 +8,59 @@ GRAVITY = 1
 PLAYER_SPEED = 5
 ENEMY_SPEED = 1
 JUMPING_HEIGHT = 15
+
+pygame.init()
 window = pygame.display.set_mode((WIDTH, HEIGHT))
+
 class Player:
     def __init__(self, platforms, enemy):
         self.player_pos_x = 200
         self.player_pos_y = 350
-        self.draw_player()
         self.platforms = platforms
         self.jumping = False
         self.velocity = 0
         self.falling = False
         self.enemy = enemy
+
     def gravity(self):
         if self.jumping:
-            self.jump() 
-
+            self.jump()
         if self.falling:
             self.fall()
 
         for platform in self.platforms:
-            if self.player.y > platform.y + platform.height and self.player.y < platform.y + platform.height + 20:
-                if self.player_pos_x + self.player.width >= platform.x and self.player_pos_x <= platform.x + platform.width:
+            if self.player_pos_y > platform.y + platform.height and self.player_pos_y < platform.y + platform.height + 20:
+                if self.player_pos_x + PLAYER_WIDTH >= platform.x and self.player_pos_x <= platform.x + platform.width:
                     self.jumping = False
                     self.falling = False
                     self.fall()
-            elif self.player_pos_y + self.player.height > platform.y and self.player_pos_y < platform.y:
-                if self.player_pos_x + self.player.width >= platform.x and self.player_pos_x <= platform.x + platform.width:
-                    self.player_pos_y = platform.y - self.player.height
+            elif self.player_pos_y + PLAYER_HEIGHT > platform.y and self.player_pos_y < platform.y:
+                if self.player_pos_x + PLAYER_WIDTH >= platform.x and self.player_pos_x <= platform.x + platform.width:
+                    self.player_pos_y = platform.y - PLAYER_HEIGHT
                     self.jumping = False
                     self.falling = False
-                    self.velocity = JUMPING_HEIGHT
+                    self.velocity = 0
                     break
 
-            elif self.player.bottom <= platform.y - 1:
+            elif self.player_pos_y + PLAYER_HEIGHT <= platform.y - 1:
                 if not self.jumping and not self.falling:
                     self.fall()
-            
+
     def jump(self):
         if not self.jumping:
             self.jumping = True
             self.velocity = JUMPING_HEIGHT
-
         else:
             self.player_pos_y -= self.velocity
             self.velocity -= GRAVITY
             if self.velocity < -JUMPING_HEIGHT:
                 self.jumping = False
-            
+
     def fall(self):
         if not self.falling:
             if self.velocity > 0:
                 self.velocity = 0
             self.falling = True
-
         else:
             self.player_pos_y -= self.velocity
             self.velocity -= GRAVITY
@@ -75,17 +76,17 @@ class Player:
             if (self.player.y > platform.y and self.player.y < platform.bottom) or (self.player.bottom < platform.bottom and self.player.bottom > platform.y):
                 if self.player.right > platform.x - PLAYER_SPEED and self.player.right < platform.right - PLAYER_SPEED:
                     return
-        
+
         self.enemy.enemy_pos_x -= PLAYER_SPEED
         for platform in self.platforms:
             platform.x -= PLAYER_SPEED
-    
+
     def left(self):
         for platform in self.platforms:
             if (self.player.y > platform.y and self.player.y < platform.bottom) or (self.player.bottom < platform.bottom and self.player.bottom > platform.y):
                 if self.player.x < platform.right + PLAYER_SPEED and self.player.x > platform.x + PLAYER_SPEED:
                     return
-        
+
         self.enemy.enemy_pos_x += PLAYER_SPEED
         for platform in self.platforms:
             platform.x += PLAYER_SPEED
@@ -105,18 +106,14 @@ class Enemy:
     def __init__(self, x, y, platforms):
         self.enemy_pos_x = x
         self.enemy_pos_y = y
-        self.draw_enemy()
         self.platforms = platforms
         self.falling = False
         self.velocity = 0
-
-        self.Times = 0
-
-        #Direction: Positive = Right ; Negative = Left
         self.direction = ENEMY_SPEED
+
     def draw_enemy(self):
         self.enemy = pygame.draw.rect(window, (255, 0, 0), (self.enemy_pos_x, self.enemy_pos_y, PLAYER_WIDTH, PLAYER_HEIGHT))
-        
+
     def gravity(self):
         if self.falling:
             self.fall()
@@ -136,10 +133,10 @@ class Enemy:
                 if self.enemy_pos_x + PLAYER_WIDTH >= platform.x and self.enemy_pos_x <= platform.x + platform.width:
                     self.enemy_pos_y = lowest_platform_y - PLAYER_HEIGHT
                     self.falling = False
-                    self.velocity = JUMPING_HEIGHT
+                    self.velocity = 0
                     break
 
-            elif self.enemy_pos_y + PLAYER_HEIGHT < lowest_platform_y - 1:
+            elif self.enemy_pos_y + PLAYER_HEIGHT <= lowest_platform_y - 1:
                 if not self.falling:
                     self.fall()
 
@@ -148,16 +145,17 @@ class Enemy:
             if self.velocity > 0:
                 self.velocity = 0
             self.falling = True
-
         else:
             self.enemy_pos_y -= self.velocity
             self.velocity -= GRAVITY
             if self.velocity < -99999:
                 self.falling = False
                 self.velocity = JUMPING_HEIGHT
+
     def enemy_movement(self):
         self.gravity()
         self.moving()
+
     def moving(self):
         for platform in self.platforms:
             if self.direction > 0:
@@ -172,11 +170,13 @@ class Enemy:
         self.enemy_pos_x += self.direction
 
 clock = pygame.time.Clock()
-platforms = []
-platforms.append(pygame.Rect(0, 400, 10000, 200))
-platforms.append(pygame.Rect(100, 320, 100, 10))
-platforms.append(pygame.Rect(100, 290, 10, 30))
-platforms.append(pygame.Rect(190, 290, 10, 30))
+platforms = [
+    pygame.Rect(0, 400, 10000, 200),
+    pygame.Rect(100, 320, 100, 10),
+    pygame.Rect(100, 290, 10, 30),
+    pygame.Rect(190, 290, 10, 30)
+]
+
 def main():
     run = True
     enemy = Enemy(150, 300, platforms)
@@ -185,13 +185,16 @@ def main():
         clock.tick(FPS)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                run = False  
+                run = False
         window.fill((20, 150, 200))
         player.draw_player()
-        enemy.draw_enemy()
         player.player_movement()
+        enemy.draw_enemy()  # Ensure draw_enemy is called here
         enemy.enemy_movement()
         for platform in platforms:
             pygame.draw.rect(window, (123, 123, 123), platform)
         pygame.display.update()
+
 main()
+pygame.quit()
+

@@ -27,7 +27,7 @@ JUMPING_HEIGHT = 15
 
 FPS = 60
 
-background = pygame.image.load("Python/Game/PlatformGame/background.png")
+background = pygame.image.load("background.png")
 background_width = background.get_width()
 
 tiles = math.ceil(WIDTH / background_width) + 1
