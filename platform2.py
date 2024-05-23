@@ -27,7 +27,7 @@ JUMPING_HEIGHT = 15
 
 FPS = 60
 
-background = pygame.image.load("Python/Game/PlatformGame/background.png")
+background = pygame.image.load("background.png")
 background_width = background.get_width()
 
 tiles = math.ceil(WIDTH / background_width) + 1
@@ -39,14 +39,9 @@ class Enemy:
     def __init__(self, x, y, platforms, bg):
         self.enemy_pos_x = x
         self.enemy_pos_y = y
-        self.draw_enemy()
         self.platforms = platforms
-        self.falling = False
+        self.falling = True
         self.velocity = 0
-
-        self.Times = 0
-
-        #Direction: Positive = Right ; Negative = Left
         self.direction = ENEMY_SPEED
 
     def draw_enemy(self):
@@ -54,59 +49,42 @@ class Enemy:
 
     def gravity(self):
         if self.falling:
-            self.fall()
+            self.enemy_pos_y += self.velocity
+            self.velocity += GRAVITY
+            self.check_platform_collision()
 
-        lowest_platform_y = float('inf')
+    def check_platform_collision(self):
+        self.falling = True
         for platform in self.platforms:
-            if (self.enemy_pos_x + ENEMY_WIDTH > platform.x and self.enemy_pos_x < platform.right) or (self.enemy.x < platform.right and self.enemy.x > platform.x):
-                if self.enemy_pos_y < platform.y and platform.y < lowest_platform_y:
-                    lowest_platform_y = platform.y
-
-        for platform in self.platforms:
-            if self.enemy_pos_y > platform.y + platform.height and self.enemy_pos_y < platform.y + platform.height:
-                if self.enemy_pos_x + ENEMY_WIDTH >= platform.x and self.enemy_pos_x <= platform.x + platform.width:
+            if self.enemy_pos_x + ENEMY_WIDTH > platform.x and self.enemy_pos_x < platform.x + platform.width:
+                if self.enemy_pos_y + ENEMY_HEIGHT >= platform.y and self.enemy_pos_y + ENEMY_HEIGHT <= platform.y + self.velocity:
+                    self.enemy_pos_y = platform.y - ENEMY_HEIGHT
                     self.falling = False
-                    self.fall()
-            elif self.enemy_pos_y + ENEMY_HEIGHT > platform.y and self.enemy_pos_y < platform.y:
-                if self.enemy_pos_x + ENEMY_WIDTH >= platform.x and self.enemy_pos_x <= platform.x + platform.width:
-                    self.enemy_pos_y = lowest_platform_y - ENEMY_HEIGHT
-                    self.falling = False
-                    self.velocity = JUMPING_HEIGHT
+                    self.velocity = 0
                     break
 
-            elif self.enemy_pos_y + ENEMY_HEIGHT <= lowest_platform_y:
-                if not self.falling:
-                    self.fall()
-
-    def fall(self):
-        if not self.falling:
-            if self.velocity > 0:
-                self.velocity = 0
-            self.falling = True
-
-        else:
-            self.enemy_pos_y -= self.velocity
-            self.velocity -= GRAVITY
-            if self.velocity < -99999:
-                self.falling = False
-                self.velocity = JUMPING_HEIGHT
-    
     def enemy_movement(self):
         self.gravity()
         self.moving()
-    
-    def moving(self):
-        for platform in self.platforms:
-            if self.direction > 0:
-                if (self.enemy.y > platform.y and self.enemy.y < platform.bottom) or (self.enemy.bottom < platform.bottom and self.enemy.bottom > platform.y):
-                    if self.enemy.right > platform.x - ENEMY_SPEED and self.enemy.right < platform.right - ENEMY_SPEED:
-                        self.direction *= -1
-            else:
-                if (self.enemy.y > platform.y and self.enemy.y < platform.bottom) or (self.enemy.bottom < platform.bottom and self.enemy.bottom > platform.y):
-                    if self.enemy.x < platform.right + ENEMY_SPEED and self.enemy.x > platform.x + ENEMY_SPEED:
-                        self.direction *= -1
 
-        self.enemy_pos_x += self.direction
+    def moving(self):
+        edge_detected = False
+        for platform in self.platforms:
+            if self.direction > 0:  # Moving right
+                if self.enemy_pos_x + ENEMY_WIDTH >= platform.x and self.enemy_pos_x + ENEMY_WIDTH <= platform.x + ENEMY_SPEED:
+                    if self.enemy_pos_y + ENEMY_HEIGHT > platform.y and self.enemy_pos_y < platform.y + platform.height:
+                        edge_detected = True
+                        break
+            else:  # Moving left
+                if self.enemy_pos_x <= platform.x + platform.width and self.enemy_pos_x >= platform.x + platform.width - ENEMY_SPEED:
+                    if self.enemy_pos_y + ENEMY_HEIGHT > platform.y and self.enemy_pos_y < platform.y + platform.height:
+                        edge_detected = True
+                        break
+
+        if not edge_detected:
+            self.enemy_pos_x += self.direction
+        else:
+            self.direction *= -1
         
 
        
