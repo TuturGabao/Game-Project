@@ -52,7 +52,24 @@ class Enemy:
             self.enemy_pos_y += self.velocity
             self.velocity += GRAVITY
             self.check_platform_collision()
+            self.check_platform_under_enemy()
+      
+    def get_nearest_platform(self):
+        lowest_platform = self.platforms[0]
+        for platform in self.platforms:
+            if (self.enemy_pos_x + PLAYER_WIDTH > platform.x and self.enemy_pos_x < platform.right):
+                if self.enemy_pos_y < platform.y and platform.y < lowest_platform.y:
+                    lowest_platform = platform
 
+        return lowest_platform
+
+    def check_platform_under_enemy(self):
+        lowest_platform = self.get_nearest_platform()
+
+        if self.enemy_pos_x + ENEMY_WIDTH > lowest_platform.x and self.enemy_pos_x < lowest_platform.right:
+            if self.enemy_pos_y + ENEMY_HEIGHT >= lowest_platform.y:
+                self.falling = True
+                
     def check_platform_collision(self):
         self.falling = True
         for platform in self.platforms:
