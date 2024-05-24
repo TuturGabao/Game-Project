@@ -1,8 +1,10 @@
 import pygame
 import math
 import pygame_gui
+import check_box 
 
 pygame.init()
+pygame.font.init()
 
 WIDTH, HEIGHT = 1200, 700
 
@@ -26,10 +28,12 @@ ENEMY_SPEED = 3
 
 JUMPING_HEIGHT = 15
 
-FPS = 60
+fps = 60
 FPS_UI = 1000
 
 BUTTON_HEIGHT, BUTTON_WIDTH = 40, 140
+
+settings = False
 
 manager = pygame_gui.UIManager((WIDTH, HEIGHT))
 
@@ -66,9 +70,9 @@ FPS_slider = pygame_gui.elements.UIHorizontalSlider(
     (30, 120),
     manager
 )
-FPS_label_rect = pygame.Rect(FPS_slider.get_relative_rect().x, FPS_slider.get_relative_rect().y + 35, BUTTON_WIDTH+30, BUTTON_HEIGHT)
-FPS_label = pygame_gui.elements.UILabel(
-    FPS_label_rect,
+FPS_label_menu_rect = pygame.Rect(FPS_slider.get_relative_rect().x, FPS_slider.get_relative_rect().y + 35, BUTTON_WIDTH+30, BUTTON_HEIGHT)
+FPS_label_menu = pygame_gui.elements.UILabel(
+    FPS_label_menu_rect,
     "FPS: 60",
     manager
 )
@@ -83,16 +87,21 @@ playing_buttons = [
 ]
 settings_buttons = [
     FPS_slider,
-    FPS_label
+    FPS_label_menu
 ]
 
-background = pygame.image.load("background.png")
+background = pygame.image.load("Python/Game/PlatformGame/background.png")
 background_width = background.get_width()
 
 tiles = math.ceil(WIDTH / background_width) + 1
 
 window = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Platform Game")
+
+CheckBox = check_box.Checkbox(window, WIDTH/2-(BUTTON_WIDTH+30)/2, 200, 0, (123, 123, 123), "Show FPS", (255, 255, 255), (255, 0, 0), 22, (255, 255, 255))
+
+font = pygame.font.SysFont("Calibri", 18)
+FPS_game = font.render("FPS: 60.0", True, (255, 255, 255))
 
 class Enemy:
     def __init__(self, x, y, platforms):
@@ -385,11 +394,21 @@ class Game:
         for enemy in self.enemies:
             enemy.enemy_pos_x += PLAYER_SPEED
 
-    def handle_slider(self):
-        FPS = round(FPS_slider.get_current_value(), 0)
-        FPS_label.set_text(f"FPS: {FPS_slider.get_current_value():.1f}")
+    def handle_labels(self):
+        global fps
+        global playing
+        if playing:
+            color = (0, 0, 0)
+        else:
+            color = (255, 255, 255)
+        FPS_game = font.render("FPS: " + float.__str__(actual_fps/2), True, color)
+        if CheckBox.checked:
+            window.blit(FPS_game, (WIDTH - BUTTON_WIDTH + 15, 20, BUTTON_WIDTH, BUTTON_HEIGHT))
+        fps = round(FPS_slider.get_current_value())
+        FPS_label_menu.set_text("FPS: " + int.__str__(fps))
 
     def handle_buttons(self, event, playing):
+        global settings
         if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == play_button:
             for button in menu_buttons:
                 button.hide()
@@ -403,6 +422,7 @@ class Game:
             for button in settings_buttons:
                 button.show()
             menu_button.show()
+            settings = True
 
         elif event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == leave_button:
             quit()
@@ -416,9 +436,7 @@ class Game:
             for button in settings_buttons:
                 button.hide()
             playing = False
-
-        if not playing:
-            self.handle_slider()
+            settings = False
 
         return playing
 
@@ -427,9 +445,14 @@ game = Game()
 clock = pygame.time.Clock()
 
 def main():
+    global settings
+    global actual_fps
+    global fps
+    global playing
     run = True
     playing = False
     platforms = game.draw_platform()
+    actual_fps = 60.0
 
     for button in settings_buttons:
         button.hide()
@@ -437,11 +460,15 @@ def main():
         button.hide()
 
     while run:
-        clock.tick(FPS)
+        clock.tick(fps)
+        actual_fps = round(clock.get_fps(), 1)
         manager.update(clock.tick(FPS_UI) / 1000.0)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
+            
+            if settings:
+                CheckBox.update_checkbox(event)
 
             manager.process_events(event)
 
@@ -452,6 +479,9 @@ def main():
                 platforms = game.draw_platform()
             
         window.fill((0, 0, 0))
+
+        if settings:
+            CheckBox.render_checkbox()
 
         if playing:
             game.draw_bg()
@@ -467,6 +497,8 @@ def main():
             for platform in platforms:
                 pygame.draw.rect(window, (123, 123, 123), platform)
 
+        print(fps)
+        game.handle_labels()
         manager.draw_ui(window)
         pygame.display.update()
 
