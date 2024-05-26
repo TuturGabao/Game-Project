@@ -1,2 +1,2 @@
 all:
-	python3 platform2.py
+	python3 platform.py
